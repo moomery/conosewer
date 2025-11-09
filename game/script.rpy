@@ -70,8 +70,17 @@ init python:
     import time
     import math
 
+    # Wipe non-mouse bindings, because fuck those.
+    wipethis = list(config.keymap.keys())
+    for item in wipethis:
+        spared = False
+        val_list = config.keymap[item]
+        for val in val_list:
+            if('mouse' in val):
+                spared = True
+        if not spared:
+            config.keymap[item] = None
 
-        
     class Pipi(renpy.Displayable):
         ACTION_DELAY = 0.25
 
