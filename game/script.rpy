@@ -63,6 +63,8 @@ transform drink:
 transform toss:
     "minigame/rsus.png"
 
+transform desk:
+    "minigame/fg.png"
 
 init python:
     import time
@@ -127,7 +129,16 @@ init python:
         def render(self, width, height, st, at):
             r = renpy.Render(width, height)
             pipi_render = self.pipi.render(width, height, st, at)
-            r.blit(pipi_render, (0, 0))
+            desk_render = renpy.render(desk, width, height, st, at)
+
+            # Todo: Fix this shit! 
+            if(self.pipi.state == "drink"):
+                r.blit(desk_render, (0, 0))
+                r.blit(pipi_render, (0, 0))            
+            else:
+                r.blit(pipi_render, (0, 0))            
+                r.blit(desk_render, (0, 0))
+
 
             # Check for end of game only once
             if not self.done and time.time() >= self.end_time:
