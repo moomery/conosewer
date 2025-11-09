@@ -68,62 +68,65 @@ init python:
     import time
     import math
 
-    ACTION_DELAY = 0.25
 
-    VALID_PRESSES = {pygame_sdl2.K_UP: "drink", \
-                     pygame_sdl2.K_LEFT: "loot", \
-                     pygame_sdl2.K_DOWN: "drink", \
-                     pygame_sdl2.K_RIGHT: "toss", \
-                     pygame_sdl2.K_w: "drink", \
-                     pygame_sdl2.K_a: "loot",
-                     pygame_sdl2.K_s: "drink", \
-                     pygame_sdl2.K_d: "toss" \
-                     }
-
-    STATE_TO_TRANSFORM = {"idle": fneutral, "drink": drink, \
-                          "loot": loot, "toss": toss}
-
-    class State:
-        def __init__(self, state, deadline, transform):
-            self.state = state
-            self.deadline = deadline
         
+    class Pipi(renpy.Displayable):
+        ACTION_DELAY = 0.25
+
+        VALID_PRESSES = {pygame_sdl2.K_UP: "drink", \
+                        pygame_sdl2.K_LEFT: "loot", \
+                        pygame_sdl2.K_DOWN: "drink", \
+                        pygame_sdl2.K_RIGHT: "toss", \
+                        pygame_sdl2.K_w: "drink", \
+                        pygame_sdl2.K_a: "loot",
+                        pygame_sdl2.K_s: "drink", \
+                        pygame_sdl2.K_d: "toss" \
+                        }
+        STATE_TO_TRANSFORM = {"idle": fneutral, "drink": drink, \
+                            "loot": loot, "toss": toss}
+        def __init__(self):
+            super(Pipi, self).__init__()
+            self.state = "idle"
+            self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
+            self.state_deadline = math.inf
+        def render(self, width, height, st, at):
+            r = renpy.Render(width, height)
+            if(time.time() >= self.state_deadline):
+                self.state = "idle"
+                self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
+                self.state_deadline = math.inf
+
+            pipi_render = renpy.render(self.current_sprite, width, height, st, at)
+
+            return pipi_render
+
+        def handle_key(self, new_state):
+            if(self.state != new_state):
+                self.state = new_state
+                self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
+                self.state_deadline = time.time() + Pipi.ACTION_DELAY
+
+
+
 
     class MinigameManager(renpy.Displayable):
         def __init__(self, stockpile, game_duration):
             super(MinigameManager, self).__init__()
+            self.pipi = Pipi()
             self.stockpile = stockpile
             self.start_time = time.time()
             self.end_time = self.start_time + game_duration
             self.done = False
 
-            self.state = "idle"
-            self.current_sprite = STATE_TO_TRANSFORM[self.state]
-            self.state_deadline = math.inf
-
-        def check_current_state_deadline(self):
-            return -1 if (not self.state_queue) else self.state_queue[0].deadline
-
-        def handle_key(self, new_state):
-            if(self.state != new_state):
-                self.state = new_state
-                self.current_sprite = STATE_TO_TRANSFORM[self.state]
-                self.state_deadline = time.time() + ACTION_DELAY
+            self.pipi = Pipi()
 
         def event(self, ev, x, y, st):
-            if ev.type == pygame_sdl2.KEYDOWN and ev.key in VALID_PRESSES:
-                self.handle_key(VALID_PRESSES[ev.key])
+            if ev.type == pygame_sdl2.KEYDOWN and ev.key in Pipi.VALID_PRESSES:
+                self.pipi.handle_key(Pipi.VALID_PRESSES[ev.key])
 
         def render(self, width, height, st, at):
             r = renpy.Render(width, height)
-
-            if(time.time() >= self.state_deadline):
-                self.state = "idle"
-                self.current_sprite = STATE_TO_TRANSFORM[self.state]
-                self.state_deadline = math.inf
-
-            pipi_render = renpy.render(self.current_sprite, width, height, st, at)
-
+            pipi_render = self.pipi.render(width, height, st, at)
             r.blit(pipi_render, (0, 0))
 
             # Check for end of game only once
