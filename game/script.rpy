@@ -358,8 +358,15 @@ init python:
 
         def event(self, ev, x, y, st):
 
-            # Disallow keypress when punished
+            # Disallow keypress when punished or drinking
             if(self.pipi.state == "punish"):
+                return
+            if(self.pipi.state == "drink"):
+                # Gotta check if you stopped drinking too early.
+                if(ev.type == pygame_sdl2.KEYUP \
+                and ev.key in Pipi.VALID_PRESSES):
+                    self.pipi.handle_keyup()
+                    
                 return
 
             if ev.type == pygame_sdl2.KEYDOWN \
