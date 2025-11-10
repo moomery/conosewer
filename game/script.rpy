@@ -329,8 +329,7 @@ init python:
         def event(self, ev, x, y, st):
 
             # Disallow keypress when punished
-            if(self.locked_time - time.time() > 0 and \
-               self.locked_time - time.time() < PUNISHMENT_MARGIN):
+            if(self.pipi.state == "punish"):
                 return
 
             if ev.type == pygame_sdl2.KEYDOWN \
