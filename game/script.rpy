@@ -14,7 +14,7 @@ style default:
 
 image white = "#fff"
 screen minigame2:
-    add MinigameManager(48, 180, 1)
+    add MinigameManager(48, 120, 1)
 screen minigame:
     add MinigameManager(12, 30)
 
@@ -167,6 +167,14 @@ label start:
     hide sylph
     show pipi sus2 
     "W--Wait, I--"
+    jump lose
+
+    label time_loss:
+    hide screen minigame
+    hide screen minigame2
+    $ renpy.music.set_volume(0.00, delay=0, channel='music')                     
+    "You took too long."
+    "Sylph woke up, saw your mess, and was sickened."
     jump lose
 
     label lose:
@@ -611,7 +619,7 @@ init python:
             bottle_bar = self.bottle_manager.render(width, height, st, at)
 
             # Loss conditions:
-            if(self.sylph.state == "awake" and self.difficulty == 0):
+            if(self.sylph.state == "awake"):
                 if(self.pipi.state == "loot" \
                 and self.bottle_manager.bottle_queue[-1].full):
                     renpy.music.set_volume(0.00, delay=0, channel='music') 
@@ -656,7 +664,9 @@ init python:
 
             if not self.done and time.time() >= self.end_time:
                 self.done = True
-                renpy.jump("lose")
+                renpy.play("Whistle.wav")
+
+                renpy.jump("time_loss")
 
             renpy.redraw(self, 0.1)
             return r
