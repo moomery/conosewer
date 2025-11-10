@@ -13,7 +13,8 @@ style default:
     antialias False
 
 
-
+screen minigame2:
+    add MinigameManager(48, 180, 1)
 screen minigame:
     add MinigameManager(12, 30)
 
@@ -34,6 +35,7 @@ label start:
     # images directory to show it.
 
     scene bg room
+    show fg
     # This shows a character sprite. A placeholder is used, but you can
     # replace it by adding a file named "eileen happy.png" to the images
     # directory.
@@ -84,6 +86,7 @@ label start:
 
 
     hide pipi
+    hide fg
     play music "minigame.mp3"
     show screen minigame
     $ renpy.pause(999, hard=True)
@@ -168,11 +171,55 @@ label start:
     "YOU LOSE."
     # This ends the game.
     return
-
+    
     label win:
-    show pipi happy
-    hide screen minigame 
-    p "You WIN!"
+    $ renpy.music.set_volume(0.00, delay=2, channel='music')                     
+    hide screen minigame
+    with dissolve
+    show bg
+    show fg
+    p "I drank piss all throughout the night."
+    p "And Sylph was none the wiser."
+    $ renpy.music.set_volume(1.00, delay=0, channel='music')                     
+    play music "what.mp3"
+    show sylph happy
+    with dissolve
+    s "Well. Someone's happy today."
+    hide sylph
+    show pipi sus 
+    s "Oh ,you..."
+    hide pipi
+    show sylph
+    s "Lemme give you a kiss!"
+    p "No, wait--"
+    hide sylph
+    with dissolve
+    $ renpy.music.set_volume(0.00, delay=0, channel='music')                     
+    "Smooch!"
+    show sylph sus
+    with dissolve
+    s "Erm, Pipi..."
+    hide sylph
+    show pipi sus2
+    p "Eheheh... Yes, my love?"
+    hide pipi
+    show sylph sus
+    s "For some reason you taste"
+    show sylph 
+    $ renpy.music.set_volume(1.00, delay=0, channel='music')                     
+    s "FANTASTIC Today!"
+    hide sylph
+    show pipi sus
+    p "Wow!"
+    $ renpy.music.set_volume(0.00, delay=2, channel='music')                     
+    p "(That night, I received my biggest shipment yet.)"
+    p "(I would have to drink gallons and gallons to survive.)"
+    hide pipi sus
+    show screen minigame2
+    $ renpy.music.set_volume(1.00, delay=2, channel='music')                     
+    play music "minigame.mp3"
+    $ renpy.pause(999, hard=True)
+
     return
 
 
@@ -289,7 +336,7 @@ init python:
 
             return pipi_render
 
-        def handle_key(self, new_state):
+        def handle_key(self, new_state, difficulty):
             locked = False
             if(new_state == "loot"):
                 if(self.bottle_manager.stockpile == 0):
@@ -297,9 +344,12 @@ init python:
                     locked = True
                 else:
                     renpy.play("loot.mp3")
-                    self.bottle_manager.decrement_stock()
+                    if(difficulty == 1):
+                        self.bottle_manager.add_bottle(6)
+                    else:
+                        self.bottle_manager.add_bottle()
 
-                    self.bottle_manager.add_bottle()
+
 
             elif(new_state == "drink"):
                 success = self.bottle_manager.attempt_drink()
@@ -356,6 +406,14 @@ init python:
                     self.state = "waking"
                 else:
                     self.state = "awake"
+            if(self.difficulty == 1):
+                if(time_since_start%7 < 4):
+                    self.state = "asleep"
+                elif(time_since_start%7 < 6):
+                    renpy.play("waking.mp3")
+                    self.state = "waking"
+                else:
+                    self.state = "awake"
 
 
             self.current_sprite = Sylph.STATE_TO_TRANSFORM[self.state]
@@ -384,20 +442,23 @@ init python:
             for bottle in self.bottle_queue:
                 if(bottle.full):
                     return True
-        def add_bottle(self):
+        def add_bottle(self, n = 1):
+            for i in range(n):
+                if(self.stockpile == 0):
+                    continue
 
-            if(self.difficulty == 0):
-                new_full = random.random() < .7
+                if(self.difficulty == 0):
+                    new_full = random.random() < .7
+                if(self.difficulty == 1):
+                    new_full = random.random() < .3
 
-            self.bottle_queue.append( \
-                Bottle( \
-                    len(self.bottle_queue), \
-                    new_full \
-                    )
-            )
-
-        def decrement_stock(self):
-            self.stockpile -= 1
+                self.bottle_queue.append( \
+                    Bottle( \
+                        len(self.bottle_queue), \
+                        new_full \
+                        )
+                )
+                self.stockpile -= 1
 
         def drink(self):
                 self.bottle_queue[-1].being_drank = False
@@ -488,7 +549,7 @@ init python:
                 and ev.key in Pipi.VALID_PRESSES:
 
                 # Check for loss condition.
-                locked = self.pipi.handle_key(Pipi.VALID_PRESSES[ev.key])
+                locked = self.pipi.handle_key(Pipi.VALID_PRESSES[ev.key], self.difficulty)
                 if(locked):
                     self.pipi.state = "punish"
                     self.locked_time = time.time()
@@ -544,7 +605,8 @@ init python:
             # Check for end of game only once
             if self.bottle_manager.stockpile <= 0 \
             and not self.bottle_manager.has_full_bottle():
-                renpy.jump("win")
+                if(self.difficulty == 0):
+                    renpy.jump("win")
 
             if not self.done and time.time() >= self.end_time:
                 self.done = True
