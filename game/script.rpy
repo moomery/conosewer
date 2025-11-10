@@ -110,9 +110,9 @@ transform loot:
 
 transform drink:
     "minigame/fsus0.png"
-    pause 0.07
+    pause 0.14
     "minigame/fsus1.png"
-    pause 0.07
+    pause 0.14
     repeat
 
 transform toss:
@@ -136,6 +136,13 @@ transform loss:
 transform full:
     "minigame/bottle.png"
 
+transform shaking:
+    "minigame/bottle.png"
+    pause 0.14
+    "minigame/bottle2.png"
+    pause 0.14
+    repeat
+
 transform empt:
     "minigame/bottle2.png"
 
@@ -147,7 +154,7 @@ init python:
     import math
     import random
 
-    PUNISHMENT_MARGIN = 0.5
+    ACTION_MARGIN = 0.5
 
     # Wipe non-mouse bindings, because fuck those.
     wipethis = list(config.keymap.keys())
@@ -185,6 +192,13 @@ init python:
         def render(self, width, height, st, at):
             r = renpy.Render(width, height)
             if(time.time() >= self.state_deadline):
+
+                # This SHOULD be where drinking ends.
+                if(self.state == "drink"):
+                    # Successful drink occurred.
+                    renpy.play("drank.mp3")
+                    self.bottle_manager.drink()
+
                 self.state = "idle"
                 self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
                 self.state_deadline = math.inf
@@ -219,10 +233,13 @@ init python:
 
             self.state = new_state
             self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
-            self.state_deadline = time.time() + PUNISHMENT_MARGIN
+            self.state_deadline = time.time() + ACTION_MARGIN
             return locked
 
         def handle_keyup(self):
+            if(self.state == "drink"):
+                self.bottle_manager.bottle_queue[-1].being_drank = False
+
             self.state = "idle"
             self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
             self.state_deadline = math.inf
@@ -263,6 +280,7 @@ init python:
             self.index = index
             self.max_width = 10
             self.full = full
+            self.being_drank = False
 
 
     class BottleManager (renpy.Displayable):
@@ -284,12 +302,16 @@ init python:
                     )
             )
 
+        def drink(self):
+                self.bottle_queue[-1].being_drank = False
+                self.bottle_queue[-1].full = False
+
         def attempt_drink(self):
             if(not self.bottle_queue):
                 return False
             
             if (self.bottle_queue[-1].full):
-                self.bottle_queue[-1].full = False
+                self.bottle_queue[-1].being_drank = True
                 return True
             return False
             
@@ -309,6 +331,10 @@ init python:
             index = 0
             for bottle in self.bottle_queue:
                 bottle_transform = full if bottle.full else empt
+
+                if(bottle.being_drank):
+                    bottle_transform = shaking
+
                 bottle_render = renpy.render(bottle_transform, 0, 0, st, at)
                 r.blit(bottle_render, (35*(index%11), 35*(math.floor(index/11))))
                 index += 1
@@ -350,7 +376,7 @@ init python:
                     self.lost = True
             elif ev.type == pygame_sdl2.KEYUP \
                 and ev.key in Pipi.VALID_PRESSES:
-
+                
                 self.pipi.handle_keyup()
 
         def render(self, width, height, st, at):
