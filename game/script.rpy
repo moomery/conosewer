@@ -4,6 +4,7 @@
 # name of the character.
 
 define p = Character("Pipi")
+define s = Character("Sylph")
 
 
 # The game starts here.
@@ -17,6 +18,16 @@ screen minigame:
     add MinigameManager(50, 30)
 
 label start:
+    "I'd been feeling depressed."
+
+    "Sober for four months, with nothing to show for it."
+
+    "Sylph thinks I'm okay, but every night I dream"
+
+    "of that sweet, sweet ochre fluid:"
+
+    "dehydrated urine."
+
     play music "what.mp3"
     # Show a background. This uses a placeholder by default, but you can
     # add a file (named either "bg room.png" or "bg room.jpg") to the
@@ -29,9 +40,49 @@ label start:
 
     show pipi
 
+    p "My name is Pipi – pronounced pie-pie – and I have a piss addiction."
+
     # These display lines of dialogue.
 
-    p "Minigame time!"
+    p "My contacts still send me their piss, I just hide it instead of drinking it."
+
+    hide pipi
+    show sylph
+
+    s "Hey, my Cream Pie! What's up, hot stuff?"
+
+    hide sylph
+    show pipi sus
+
+    p "(Sylph doesn't know about my secret life. He's too innocent.)"
+
+    show pipi happy
+
+    p "Nothing, Butt Cakes!"
+
+    show pipi sus
+
+    p "(Over the past four months, I've amassed a truly ungodly stockpile of piss.)"
+
+    hide pipi
+    show sylph
+
+    s "I'm gonna hit the sack. And I don't mean yours!"
+
+    hide sylph
+    show pipi happy
+
+    p "Okay, Sylphie! Good night!"
+
+    show pipi
+
+    p "(This most recent shipment put me over the edge.)"
+
+    p "(I'm ready to break my streak.)"
+
+    p "(Tonight, I feast.)"
+
+
     hide pipi
     play music "minigame.mp3"
     show screen minigame
@@ -46,9 +97,8 @@ label start:
     return
 
     label lose:
-    hide screen minigame
-    show pipi sus2
-    p "You LOSE!"
+    $ renpy.music.set_volume(0.00, delay=0, channel='music') 
+    s "What the--!"
     # This ends the game.
     return
 
@@ -66,6 +116,18 @@ transform toss:
 
 transform desk:
     "minigame/fg.png"
+
+transform asleep:
+    "minigame/asleep.png"
+
+transform waking:
+    "minigame/waking.png"
+
+transform awake:
+    "minigame/awake.png"
+
+transform loss:
+    "minigame/loss.png"
 
 init python:
     import time
@@ -101,6 +163,7 @@ init python:
             self.state = "idle"
             self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
             self.state_deadline = math.inf
+            self.lost = False
         def render(self, width, height, st, at):
             r = renpy.Render(width, height)
             if(time.time() >= self.state_deadline):
@@ -123,26 +186,59 @@ init python:
             self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
             self.state_deadline = math.inf
 
+    class Sylph(renpy.Displayable):
+        STATE_TO_TRANSFORM = {"awake": awake, "loss": loss, \
+                            "asleep": asleep, "waking": waking}
+        def __init__(self, start_time, difficulty):
+            super(Sylph, self).__init__()
+            self.start_time = start_time
+            self.difficulty = difficulty
+            self.state = "asleep"
+            self.current_sprite = Sylph.STATE_TO_TRANSFORM[self.state]
+            self.state_deadline = math.inf
+
+        def render(self, width, height, st, at):
+            time_since_start = time.time() - self.start_time
+            r = renpy.Render(width, height)
+
+            # LEVEL 1
+            if(self.difficulty == 0):
+                if(time_since_start%8 < 5):
+                    self.state = "asleep"
+                elif(time_since_start%8 < 6):
+                    self.state = "waking"
+                else:
+                    self.state = "awake"
+            self.current_sprite = Sylph.STATE_TO_TRANSFORM[self.state]
+
+            sylph_render = renpy.render(self.current_sprite, width, height, st, at)
+
+            return sylph_render
+
 
 
 
     class MinigameManager(renpy.Displayable):
-        def __init__(self, stockpile, game_duration):
+        def __init__(self, stockpile, game_duration, difficulty=0):
             super(MinigameManager, self).__init__()
-            self.pipi = Pipi()
             self.stockpile = stockpile
             self.start_time = time.time()
             self.end_time = self.start_time + game_duration
             self.done = False
+            self.lost = False
 
             self.pipi = Pipi()
+            self.sylph = Sylph(self.start_time, difficulty)
 
         def event(self, ev, x, y, st):
             if ev.type == pygame_sdl2.KEYDOWN \
                 and ev.repeat == 0 \
                 and ev.key in Pipi.VALID_PRESSES:
 
+                # Check for loss condition.
                 self.pipi.handle_key(Pipi.VALID_PRESSES[ev.key])
+                if(self.sylph.state == "awake"):
+                    self.lost = True
             elif ev.type == pygame_sdl2.KEYUP \
                 and ev.key in Pipi.VALID_PRESSES:
 
@@ -150,9 +246,11 @@ init python:
 
         def render(self, width, height, st, at):
             r = renpy.Render(width, height)
+            sylph_render = self.sylph.render(width, height, st, at)
             pipi_render = self.pipi.render(width, height, st, at)
             desk_render = renpy.render(desk, width, height, st, at)
 
+            r.blit(sylph_render, (0, 0))
             # Todo: Fix this shit! 
             if(self.pipi.state == "drink"):
                 r.blit(desk_render, (0, 0))
@@ -161,6 +259,8 @@ init python:
                 r.blit(pipi_render, (0, 0))            
                 r.blit(desk_render, (0, 0))
 
+            # if self.lost:
+            #     renpy.jump("lose")
 
             # Check for end of game only once
             if not self.done and time.time() >= self.end_time:
