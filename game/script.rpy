@@ -135,10 +135,15 @@ transform full:
 transform empt:
     "minigame/bottle2.png"
 
+transform punish:
+    "minigame/punish.png"
+
 init python:
     import time
     import math
     import random
+
+    PUNISHMENT_MARGIN = 0.5
 
     # Wipe non-mouse bindings, because fuck those.
     wipethis = list(config.keymap.keys())
@@ -164,7 +169,8 @@ init python:
                         pygame_sdl2.K_d: "toss" \
                         }
         STATE_TO_TRANSFORM = {"idle": fneutral, "drink": drink, \
-                            "loot": loot, "toss": toss}
+                            "loot": loot, "toss": toss, \
+                            "punish": punish}
         def __init__(self, bottle_manager):
             super(Pipi, self).__init__()
             self.bottle_manager = bottle_manager
@@ -184,6 +190,7 @@ init python:
             return pipi_render
 
         def handle_key(self, new_state):
+            locked = False
             if(new_state == "loot"):
                 renpy.play("loot.mp3")
                 self.bottle_manager.add_bottle()
@@ -194,18 +201,22 @@ init python:
                     renpy.play("drink.mp3")
                 else:
                     renpy.play("no.mp3")
-
+                    locked = True
             elif(new_state == "toss"):
                 success = self.bottle_manager.attempt_toss()
                 if(success):
                     renpy.play("toss.mp3")
                 else:
                     renpy.play("no.mp3")
+                    locked = True
 
+            if(locked):
+                new_state = "punish"
 
             self.state = new_state
             self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
-            self.state_deadline = math.inf
+            self.state_deadline = time.time() + PUNISHMENT_MARGIN
+            return locked
 
         def handle_keyup(self):
             self.state = "idle"
@@ -235,6 +246,8 @@ init python:
                     self.state = "waking"
                 else:
                     self.state = "awake"
+
+
             self.current_sprite = Sylph.STATE_TO_TRANSFORM[self.state]
 
             sylph_render = renpy.render(self.current_sprite, width, height, st, at)
@@ -274,7 +287,6 @@ init python:
             if (self.bottle_queue[-1].full):
                 self.bottle_queue[-1].full = False
                 return True
-            # TODO: DON'T PLAY SOUNDS HERE LOL!
             return False
             
         def attempt_toss(self):
@@ -307,6 +319,7 @@ init python:
             self.difficulty = difficulty
             self.done = False
             self.lost = False
+            self.locked_time = -1
 
             self.bottle_manager = BottleManager(self.stockpile, game_duration, self.difficulty)
 
@@ -314,12 +327,22 @@ init python:
             self.sylph = Sylph(self.start_time, difficulty)
 
         def event(self, ev, x, y, st):
+
+            # Disallow keypress when punished
+            if(self.locked_time - time.time() > 0 and \
+               self.locked_time - time.time() < PUNISHMENT_MARGIN):
+                return
+
             if ev.type == pygame_sdl2.KEYDOWN \
                 and ev.repeat == 0 \
                 and ev.key in Pipi.VALID_PRESSES:
 
                 # Check for loss condition.
-                self.pipi.handle_key(Pipi.VALID_PRESSES[ev.key])
+                locked = self.pipi.handle_key(Pipi.VALID_PRESSES[ev.key])
+                if(locked):
+                    self.pipi.state = "punish"
+                    self.locked_time = time.time()
+                    
                 if(self.sylph.state == "awake"):
                     self.lost = True
             elif ev.type == pygame_sdl2.KEYUP \
