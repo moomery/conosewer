@@ -109,7 +109,11 @@ transform loot:
     "minigame/lsus.png"
 
 transform drink:
-    "minigame/fsus.png"
+    "minigame/fsus0.png"
+    pause 0.07
+    "minigame/fsus1.png"
+    pause 0.07
+    repeat
 
 transform toss:
     "minigame/rsus.png"
