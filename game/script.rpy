@@ -14,7 +14,7 @@ style default:
 
 image white = "#fff"
 screen minigame2:
-    add MinigameManager(48, 120, 1)
+    add MinigameManager(48, 45, 1)
 screen minigame:
     add MinigameManager(12, 30)
 
