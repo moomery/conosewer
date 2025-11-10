@@ -187,10 +187,18 @@ init python:
             if(new_state == "loot"):
                 renpy.play("loot.mp3")
                 self.bottle_manager.add_bottle()
+
             elif(new_state == "drink"):
                 success = self.bottle_manager.attempt_drink()
                 if(success):
                     renpy.play("drink.mp3")
+                else:
+                    renpy.play("no.mp3")
+
+            elif(new_state == "toss"):
+                success = self.bottle_manager.attempt_toss()
+                if(success):
+                    renpy.play("toss.mp3")
                 else:
                     renpy.play("no.mp3")
 
@@ -269,6 +277,14 @@ init python:
             # TODO: DON'T PLAY SOUNDS HERE LOL!
             return False
             
+        def attempt_toss(self):
+            if(not self.bottle_queue):
+                return False
+            
+            if(not self.bottle_queue[-1].full):
+                self.bottle_queue = self.bottle_queue[:-1]
+                return True
+            return False
 
         def render(self, width, height, st, at):
             # bottle_render = Bottle(width/2, height/2, True).render(st, at)
