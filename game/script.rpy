@@ -216,7 +216,9 @@ init python:
             return sylph_render
 
 
-
+    class BottleManager (renpy.Displayable):
+        def __init__(self, stockpile, game_duration, difficulty=0):
+            return
 
     class MinigameManager(renpy.Displayable):
         def __init__(self, stockpile, game_duration, difficulty=0):
