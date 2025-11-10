@@ -15,7 +15,7 @@ style default:
 
 
 screen minigame:
-    add MinigameManager(50, 30)
+    add MinigameManager(12, 30)
 
 label start:
     "I'd been feeling depressed."
@@ -101,6 +101,13 @@ label start:
     s "What the--!"
     # This ends the game.
     return
+
+transform crates2:
+    "minigame/crates2.png"
+transform crates1:
+    "minigame/crates1.png"
+transform crates0:
+    "minigame/crates0.png"
 
 transform fneutral:
     "minigame/fneutral.png"
@@ -210,8 +217,14 @@ init python:
         def handle_key(self, new_state):
             locked = False
             if(new_state == "loot"):
-                renpy.play("loot.mp3")
-                self.bottle_manager.add_bottle()
+                if(self.bottle_manager.stockpile == 0):
+                    renpy.play("no.mp3")
+                    locked = True
+                else:
+                    renpy.play("loot.mp3")
+                    self.bottle_manager.decrement_stock()
+
+                    self.bottle_manager.add_bottle()
 
             elif(new_state == "drink"):
                 success = self.bottle_manager.attempt_drink()
@@ -264,6 +277,7 @@ init python:
                 if(time_since_start%8 < 5):
                     self.state = "asleep"
                 elif(time_since_start%8 < 6):
+                    renpy.play("waking.mp3")
                     self.state = "waking"
                 else:
                     self.state = "awake"
@@ -286,6 +300,7 @@ init python:
     class BottleManager (renpy.Displayable):
         def __init__(self, stockpile, game_duration, difficulty=0):
             self.stockpile = stockpile
+            self.max_stock = stockpile
             self.game_duration = game_duration
             self.difficulty = difficulty
             self.bottle_queue = []
@@ -301,6 +316,9 @@ init python:
                     new_full \
                     )
             )
+
+        def decrement_stock(self):
+            self.stockpile -= 1
 
         def drink(self):
                 self.bottle_queue[-1].being_drank = False
@@ -325,9 +343,24 @@ init python:
             return False
 
         def render(self, width, height, st, at):
-            # bottle_render = Bottle(width/2, height/2, True).render(st, at)
-            # return bottle_render
             r = renpy.Render(width, height)
+
+            # Render the crates
+            frac_remaining = (self.stockpile/self.max_stock)
+            if(frac_remaining <= 0):
+                pass
+            elif(frac_remaining < 0.33):
+                stack_render = renpy.render(crates0, 0, 0, st, at)
+                r.blit(stack_render, (0, 0))            
+            elif(frac_remaining < 0.66):
+                stack_render = renpy.render(crates1, 0, 0, st, at)
+                r.blit(stack_render, (0, 0))            
+            else:
+                stack_render = renpy.render(crates2, 0, 0, st, at)
+                r.blit(stack_render, (0, 0))            
+
+
+            # Render the bottles
             index = 0
             for bottle in self.bottle_queue:
                 bottle_transform = full if bottle.full else empt
@@ -338,6 +371,8 @@ init python:
                 bottle_render = renpy.render(bottle_transform, 0, 0, st, at)
                 r.blit(bottle_render, (35*(index%11), 35*(math.floor(index/11))))
                 index += 1
+
+
             return r
 
     class MinigameManager(renpy.Displayable):
@@ -366,7 +401,7 @@ init python:
                 if(ev.type == pygame_sdl2.KEYUP \
                 and ev.key in Pipi.VALID_PRESSES):
                     self.pipi.handle_keyup()
-                    
+
                 return
 
             if ev.type == pygame_sdl2.KEYDOWN \
@@ -392,6 +427,8 @@ init python:
             pipi_render = self.pipi.render(width, height, st, at)
             desk_render = renpy.render(desk, width, height, st, at)
             bottle_bar = self.bottle_manager.render(width, height, st, at)
+
+
 
             r.blit(sylph_render, (0, 0))
             # Todo: Fix this shit! 
