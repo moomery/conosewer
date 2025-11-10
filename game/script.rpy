@@ -145,9 +145,9 @@ transform full:
 
 transform shaking:
     "minigame/bottle.png"
-    pause 0.14
+    pause 0.10
     "minigame/bottle2.png"
-    pause 0.14
+    pause 0.10
     repeat
 
 transform empt:
@@ -161,7 +161,7 @@ init python:
     import math
     import random
 
-    ACTION_MARGIN = 0.5
+    ACTION_MARGIN = 0.25
 
     # Wipe non-mouse bindings, because fuck those.
     wipethis = list(config.keymap.keys())
