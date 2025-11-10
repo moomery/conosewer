@@ -90,17 +90,91 @@ label start:
 
     p "This should never happen"
 
+    label reaching_lose:
+    hide screen minigame
+    show bg
+    show loss
+    show lsus
+    show fg
+    s "What the--"
+    hide loss 
+    hide rsus 
+    with dissolve
+    show sylph sus 
+    with dissolve
+    s "What is that."
+    hide sylph
+    show pipi sus
+    "I'm sorry, Sylphie."
+    jump lose
+
+    label drinking_lose:
+    hide screen minigame
+    show bg
+    show loss
+    show fsus0
+    show fg
+    s "What the--"
+    hide fsus0 
+    hide loss
+    with dissolve
+    show sylph sus
+    with dissolve
+    s "Really."
+    hide sylph
+    show pipi sus
+    "I'm sorry, Sylphie."
+    jump lose
+
+    label tossing_lose:
+    hide screen minigame
+    show bg
+    show loss
+    show rsus
+    show fg
+    s "What the--"
+    hide loss 
+    hide rsus 
+    with dissolve
+    show sylph sus
+    with dissolve
+    s "What the Hell are you tossing out the window?"
+    hide sylph
+    show pipi sus2 
+    "I--I can explain!"
+    jump lose
+
+    label has_bottle_lose:
+    hide screen minigame
+    show bg
+    show loss
+    show punish
+    show fg
+    s "W--What is that in your inventory!?"
+    hide loss
+    hide punish
+    with dissolve
+    show sylph sus
+    with dissolve
+    s "This is disgusting. You're disgusting."
+    hide sylph
+    show pipi sus2 
+    "W--Wait, I--"
+    jump lose
+
+    label lose:
+    show loser
+    s "Out! Out!"
+    "YOU LOSE."
+    # This ends the game.
+    return
+
     label go_on:
     show pipi happy
     hide screen minigame 
     p "You WIN!"
     return
 
-    label lose:
-    $ renpy.music.set_volume(0.00, delay=0, channel='music') 
-    s "What the--!"
-    # This ends the game.
-    return
 
 transform crates2:
     "minigame/crates2.png"
@@ -196,6 +270,7 @@ init python:
             self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
             self.state_deadline = math.inf
             self.lost = False
+
         def render(self, width, height, st, at):
             r = renpy.Render(width, height)
             if(time.time() >= self.state_deadline):
@@ -305,6 +380,10 @@ init python:
             self.difficulty = difficulty
             self.bottle_queue = []
 
+        def has_full_bottle(self):
+            for bottle in self.bottle_queue:
+                if(bottle.full):
+                    return True
         def add_bottle(self):
 
             if(self.difficulty == 0):
@@ -428,7 +507,26 @@ init python:
             desk_render = renpy.render(desk, width, height, st, at)
             bottle_bar = self.bottle_manager.render(width, height, st, at)
 
-
+            # Loss conditions:
+            if(self.sylph.state == "awake"):
+                if(self.pipi.state == "loot" \
+                and self.bottle_manager.bottle_queue[-1].full):
+                    renpy.music.set_volume(0.00, delay=0, channel='music') 
+                    renpy.play("whistle.mp3")
+                    renpy.jump("reaching_lose")
+                    
+                if(self.pipi.state == "drink"):
+                    renpy.music.set_volume(0.00, delay=0, channel='music') 
+                    renpy.play("whistle.mp3")
+                    renpy.jump("drinking_lose")
+                if(self.pipi.state == "toss"):
+                    renpy.music.set_volume(0.00, delay=0, channel='music') 
+                    renpy.play("whistle.mp3")
+                    renpy.jump("tossing_lose")
+                if(self.bottle_manager.has_full_bottle()):
+                    renpy.music.set_volume(0.00, delay=0, channel='music') 
+                    renpy.play("whistle.mp3")
+                    renpy.jump("has_bottle_lose")
 
             r.blit(sylph_render, (0, 0))
             # Todo: Fix this shit! 
