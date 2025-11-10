@@ -169,7 +169,7 @@ label start:
     # This ends the game.
     return
 
-    label go_on:
+    label win:
     show pipi happy
     hide screen minigame 
     p "You WIN!"
@@ -542,12 +542,13 @@ init python:
             #     renpy.jump("lose")
 
             # Check for end of game only once
+            if self.bottle_manager.stockpile <= 0 \
+            and not self.bottle_manager.has_full_bottle():
+                renpy.jump("win")
+
             if not self.done and time.time() >= self.end_time:
                 self.done = True
-                if self.stockpile <= 0:
-                    renpy.jump("go_on")
-                else:
-                    renpy.jump("lose")
+                renpy.jump("lose")
 
             renpy.redraw(self, 0.1)
             return r
