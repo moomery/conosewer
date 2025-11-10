@@ -98,7 +98,7 @@ label start:
     show fg
     s "What the--"
     hide loss 
-    hide rsus 
+    hide lsus 
     with dissolve
     show sylph sus 
     with dissolve
