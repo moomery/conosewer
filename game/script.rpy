@@ -12,7 +12,7 @@ define s = Character("Sylph")
 style default:
     antialias False
 
-
+image white = "#fff"
 screen minigame2:
     add MinigameManager(48, 180, 1)
 screen minigame:
@@ -95,6 +95,7 @@ label start:
 
     label reaching_lose:
     hide screen minigame
+    hide screen minigame2
     show bg
     show loss
     show lsus
@@ -113,6 +114,7 @@ label start:
 
     label drinking_lose:
     hide screen minigame
+    hide screen minigame2
     show bg
     show loss
     show fsus0
@@ -131,6 +133,7 @@ label start:
 
     label tossing_lose:
     hide screen minigame
+    hide screen minigame2
     show bg
     show loss
     show rsus
@@ -149,6 +152,7 @@ label start:
 
     label has_bottle_lose:
     hide screen minigame
+    hide screen minigame2
     show bg
     show loss
     show punish
@@ -174,10 +178,9 @@ label start:
     
     label win:
     $ renpy.music.set_volume(0.00, delay=2, channel='music')                     
-    hide screen minigame
-    with dissolve
     show bg
     show fg
+    hide screen minigame
     p "I drank piss all throughout the night."
     p "And Sylph was none the wiser."
     $ renpy.music.set_volume(1.00, delay=0, channel='music')                     
@@ -217,8 +220,47 @@ label start:
     hide pipi sus
     show screen minigame2
     $ renpy.music.set_volume(1.00, delay=2, channel='music')                     
-    play music "minigame.mp3"
+    play music "minigame2.mp3"
     $ renpy.pause(999, hard=True)
+
+    label win2:
+    $ renpy.music.set_volume(0.00, delay=2, channel='music')                     
+    hide room bg
+    hide screen minigame2
+    p "Months have passed."
+    p "I thought I was being so sneaky."
+    p "But turns out..."
+    s "Pipi? My Cherry Pi?"
+    p "...He knew all along."
+    $ renpy.music.set_volume(1.00, delay=1, channel='music')                     
+    play music "win_song.mp3"
+    show sylph
+    with dissolve
+    s "Hey, Pirocyon..."
+    "(Sylphie never uses my full name unless it's important.)"
+    hide sylph
+    show pipi
+    p "Yes, Sylphester?"
+    hide pipi
+    show sylph sus
+    s "You've seemed a bit distant lately..."
+    hide sylph
+    show pipi sus
+    "Oh...!"
+    hide pipi
+    show sylph happy
+    s "You know you can talk to me about anything, right?"
+    $ renpy.music.set_volume(0.00, delay=1, channel='music')                     
+    hide sylph
+    with dissolve
+    s "Well..."
+    scene white with dissolve
+
+    show win screen with dissolve
+    p "I just wish you'd told me sooner!"
+    s "Can you blame me? I couldn't drag you into this."
+    p "I'm glad you did. It's delicious!"
+    "YOU WIN"
 
     return
 
@@ -569,25 +611,27 @@ init python:
             bottle_bar = self.bottle_manager.render(width, height, st, at)
 
             # Loss conditions:
-            if(self.sylph.state == "awake"):
+            if(self.sylph.state == "awake" and self.difficulty == 0):
                 if(self.pipi.state == "loot" \
                 and self.bottle_manager.bottle_queue[-1].full):
                     renpy.music.set_volume(0.00, delay=0, channel='music') 
-                    renpy.play("whistle.mp3")
+                    renpy.play("Whistle.wav")
                     renpy.jump("reaching_lose")
                     
                 if(self.pipi.state == "drink"):
                     renpy.music.set_volume(0.00, delay=0, channel='music') 
-                    renpy.play("whistle.mp3")
+                    renpy.play("Whistle.wav")
                     renpy.jump("drinking_lose")
                 if(self.pipi.state == "toss"):
                     renpy.music.set_volume(0.00, delay=0, channel='music') 
-                    renpy.play("whistle.mp3")
+                    renpy.play("Whistle.wav")
                     renpy.jump("tossing_lose")
                 if(self.bottle_manager.has_full_bottle()):
                     renpy.music.set_volume(0.00, delay=0, channel='music') 
-                    renpy.play("whistle.mp3")
+                    renpy.play("Whistle.wav")
                     renpy.jump("has_bottle_lose")
+
+
 
             r.blit(sylph_render, (0, 0))
             # Todo: Fix this shit! 
@@ -607,6 +651,8 @@ init python:
             and not self.bottle_manager.has_full_bottle():
                 if(self.difficulty == 0):
                     renpy.jump("win")
+                if(self.difficulty == 1):
+                    renpy.jump("win2")
 
             if not self.done and time.time() >= self.end_time:
                 self.done = True
