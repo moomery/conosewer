@@ -184,9 +184,17 @@ init python:
             return pipi_render
 
         def handle_key(self, new_state):
-            renpy.play("drink.mp3")
             if(new_state == "loot"):
+                renpy.play("loot.mp3")
                 self.bottle_manager.add_bottle()
+            elif(new_state == "drink"):
+                success = self.bottle_manager.attempt_drink()
+                if(success):
+                    renpy.play("drink.mp3")
+                else:
+                    renpy.play("no.mp3")
+
+
             self.state = new_state
             self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
             self.state_deadline = math.inf
@@ -242,7 +250,7 @@ init python:
         def add_bottle(self):
 
             if(self.difficulty == 0):
-                new_full = random.random() < 7
+                new_full = random.random() < .7
 
             self.bottle_queue.append( \
                 Bottle( \
@@ -251,6 +259,16 @@ init python:
                     )
             )
 
+        def attempt_drink(self):
+            if(not self.bottle_queue):
+                return False
+            
+            if (self.bottle_queue[-1].full):
+                self.bottle_queue[-1].full = False
+                return True
+            # TODO: DON'T PLAY SOUNDS HERE LOL!
+            return False
+            
 
         def render(self, width, height, st, at):
             # bottle_render = Bottle(width/2, height/2, True).render(st, at)
