@@ -129,6 +129,12 @@ transform awake:
 transform loss:
     "minigame/loss.png"
 
+transform full:
+    "minigame/bottle.png"
+
+transform empt:
+    "minigame/bottle2.png"
+
 init python:
     import time
     import math
@@ -215,10 +221,24 @@ init python:
 
             return sylph_render
 
+    class Bottle (renpy.Displayable):
+        def __init__(self, x, y, full):
+            self.x = x
+            self.y = y
+            self.full = full
+
+        def render(self, st, at):
+            bottle_transform = full if self.full else empt
+            return renpy.render(bottle_transform, self.x, self.y, st, at)
 
     class BottleManager (renpy.Displayable):
         def __init__(self, stockpile, game_duration, difficulty=0):
-            return
+            self.stockpile = stockpile
+            self.game_duration = game_duration
+            self.difficulty = difficulty
+        def render(self, width, height, st, at):
+            bottle_render = Bottle(width/2, height/2, True).render(st, at)
+            return bottle_render
 
     class MinigameManager(renpy.Displayable):
         def __init__(self, stockpile, game_duration, difficulty=0):
@@ -226,8 +246,11 @@ init python:
             self.stockpile = stockpile
             self.start_time = time.time()
             self.end_time = self.start_time + game_duration
+            self.difficulty = difficulty
             self.done = False
             self.lost = False
+
+            self.bottle_manager = BottleManager(self.stockpile, game_duration, self.difficulty)
 
             self.pipi = Pipi()
             self.sylph = Sylph(self.start_time, difficulty)
@@ -251,6 +274,7 @@ init python:
             sylph_render = self.sylph.render(width, height, st, at)
             pipi_render = self.pipi.render(width, height, st, at)
             desk_render = renpy.render(desk, width, height, st, at)
+            bottle_bar = self.bottle_manager.render(width, height, st, at)
 
             r.blit(sylph_render, (0, 0))
             # Todo: Fix this shit! 
@@ -261,6 +285,7 @@ init python:
                 r.blit(pipi_render, (0, 0))            
                 r.blit(desk_render, (0, 0))
 
+            r.blit(bottle_bar, (0, 0))
             # if self.lost:
             #     renpy.jump("lose")
 
