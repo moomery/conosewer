@@ -138,6 +138,7 @@ transform empt:
 init python:
     import time
     import math
+    import random
 
     # Wipe non-mouse bindings, because fuck those.
     wipethis = list(config.keymap.keys())
@@ -164,8 +165,9 @@ init python:
                         }
         STATE_TO_TRANSFORM = {"idle": fneutral, "drink": drink, \
                             "loot": loot, "toss": toss}
-        def __init__(self):
+        def __init__(self, bottle_manager):
             super(Pipi, self).__init__()
+            self.bottle_manager = bottle_manager
             self.state = "idle"
             self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
             self.state_deadline = math.inf
@@ -183,6 +185,8 @@ init python:
 
         def handle_key(self, new_state):
             renpy.play("drink.mp3")
+            if(new_state == "loot"):
+                self.bottle_manager.add_bottle()
             self.state = new_state
             self.current_sprite = Pipi.STATE_TO_TRANSFORM[self.state]
             self.state_deadline = math.inf
@@ -222,23 +226,43 @@ init python:
             return sylph_render
 
     class Bottle (renpy.Displayable):
-        def __init__(self, x, y, full):
-            self.x = x
-            self.y = y
+        def __init__(self, index, full):
+            self.index = index
+            self.max_width = 10
             self.full = full
 
-        def render(self, st, at):
-            bottle_transform = full if self.full else empt
-            return renpy.render(bottle_transform, self.x, self.y, st, at)
 
     class BottleManager (renpy.Displayable):
         def __init__(self, stockpile, game_duration, difficulty=0):
             self.stockpile = stockpile
             self.game_duration = game_duration
             self.difficulty = difficulty
+            self.bottle_queue = []
+
+        def add_bottle(self):
+
+            if(self.difficulty == 0):
+                new_full = random.random() < 7
+
+            self.bottle_queue.append( \
+                Bottle( \
+                    len(self.bottle_queue), \
+                    new_full \
+                    )
+            )
+
+
         def render(self, width, height, st, at):
-            bottle_render = Bottle(width/2, height/2, True).render(st, at)
-            return bottle_render
+            # bottle_render = Bottle(width/2, height/2, True).render(st, at)
+            # return bottle_render
+            r = renpy.Render(width, height)
+            index = 0
+            for bottle in self.bottle_queue:
+                bottle_transform = full if bottle.full else empt
+                bottle_render = renpy.render(bottle_transform, 0, 0, st, at)
+                r.blit(bottle_render, (35*(index%11), 35*(math.floor(index/11))))
+                index += 1
+            return r
 
     class MinigameManager(renpy.Displayable):
         def __init__(self, stockpile, game_duration, difficulty=0):
@@ -252,7 +276,7 @@ init python:
 
             self.bottle_manager = BottleManager(self.stockpile, game_duration, self.difficulty)
 
-            self.pipi = Pipi()
+            self.pipi = Pipi(self.bottle_manager)
             self.sylph = Sylph(self.start_time, difficulty)
 
         def event(self, ev, x, y, st):
