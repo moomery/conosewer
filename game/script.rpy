@@ -109,7 +109,7 @@ label start:
     s "What is that."
     hide sylph
     show pipi sus
-    "I'm sorry, Sylphie."
+    p "I'm sorry, Sylphie."
     jump lose
 
     label drinking_lose:
@@ -128,7 +128,7 @@ label start:
     s "Really."
     hide sylph
     show pipi sus
-    "I'm sorry, Sylphie."
+    p "I'm sorry, Sylphie."
     jump lose
 
     label tossing_lose:
@@ -147,7 +147,7 @@ label start:
     s "What the Hell are you tossing out the window?"
     hide sylph
     show pipi sus2 
-    "I--I can explain!"
+    p "I--I can explain!"
     jump lose
 
     label has_bottle_lose:
@@ -166,7 +166,7 @@ label start:
     s "This is disgusting. You're disgusting."
     hide sylph
     show pipi sus2 
-    "W--Wait, I--"
+    p "W--Wait, I--"
     jump lose
 
     label time_loss:
@@ -261,13 +261,13 @@ label start:
     $ renpy.music.set_volume(0.00, delay=1, channel='music')                     
     hide sylph
     with dissolve
-    s "Well..."
+    p "Well..."
     scene white with dissolve
 
     show win screen with dissolve
-    p "I just wish you'd told me sooner!"
-    s "Can you blame me? I couldn't drag you into this."
-    p "I'm glad you did. It's delicious!"
+    s "I just wish you'd told me sooner!"
+    p "Can you blame me? I couldn't drag you into this."
+    s "I'm glad you did. It's delicious!"
     "YOU WIN"
 
     return
